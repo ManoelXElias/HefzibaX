@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hefzibá X - Calculadora de Tempo de Serviço</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 10px;
+            background-color: #eafaf1;
+            color: #2b6e4f;
+        }
+        h1, h2 {
+            color: #2b6e4f;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, button {
+            margin: 5px 0;
+            padding: 10px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #2b6e4f;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #1e4f36;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #dff2e1;
+            border: 2px solid #2b6e4f;
+            border-radius: 4px;
+        }
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #2b6e4f;
+            background-color: #f2fff5;
+            padding: 10px;
+            border-top: 1px solid #2b6e4f;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hefzibá X</h1>
+    <h2>Calculadora de Tempo de Serviço</h2>
+    <form id="form">
+        <label for="nome">Nome:</label><br>
+        <input type="text" id="nome" placeholder="Digite seu nome" required><br>
+        
+        <label for="matricula">Matrícula:</label><br>
+        <input type="text" id="matricula" placeholder="Digite sua matrícula" required><br>
+        
+        <label for="inicio">Data de Início:</label><br>
+        <input type="date" id="inicio" required><br>
+        
+        <label for="fim">Data Final:</label><br>
+        <input type="date" id="fim" required><br>
+
+        <label for="averbados">Dias Averbados:</label><br>
+        <input type="number" id="averbados" placeholder="Quantidade de dias averbados" value="0" required><br>
+
+        <h3>Períodos de Suspensão:</h3>
+        <div id="suspensoes">
+            <div class="suspensao">
+                <label>Início da Suspensão:</label>
+                <input type="date" class="suspenso-inicio">
+                <label>Fim da Suspensão:</label>
+                <input type="date" class="suspenso-fim">
+            </div>
+        </div>
+        <button type="button" onclick="adicionarSuspensao()">Adicionar Suspensão</button>
+        <br><br>
+        <button type="submit">Calcular</button>
+    </form>
+    
+    <div id="resultado" class="result" style="display: none;"></div>
+
+    <button id="exportPdf" style="display: none; margin-top: 20px;">Exportar para PDF</button>
+    <button id="exportWord" style="display: none; margin-top: 20px;">Exportar para Word</button>
+    <button id="exportPpt" style="display: none; margin-top: 20px;">Exportar para PowerPoint</button>
+
+    <footer>
+        Desenvolvido por <strong>Manoel Elias</strong> e <strong>Hefzibá X.</strong>
+    </footer>
+
+    <script>
+        function adicionarSuspensao() {
+            const suspensoesDiv = document.getElementById("suspensoes");
+            const div = document.createElement("div");
+            div.classList.add("suspensao", "card");
+            div.innerHTML = `
+                <label>Início da Suspensão:</label>
+                <input type="date" class="suspenso-inicio">
+                <label>Fim da Suspensão:</label>
+                <input type="date" class="suspenso-fim">
+            `;
+            suspensoesDiv.appendChild(div);
+        }
+
+        function calcularTempoDeServico(inicio, fim) {
+            const startDate = new Date(inicio);
+            const endDate = new Date(fim);
+
+            let totalDias = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            let anos = Math.floor(totalDias / 365);
+            let meses = Math.floor((totalDias % 365) / 30);
+            let dias = totalDias % 365 % 30;
+
+            return {
+                totalDias,
+                anos,
+                meses,
+                dias
+            };
+        }
+
+        function gerarPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const resumo = document.getElementById("resultado").innerText;
+            const linhas = resumo.split("\n");
+
+            linhas.forEach((linha, index) => {
+                doc.text(linha, 10, 10 + index * 10);
+            });
+
+            doc.save("Resumo_Tempo_de_Servico.pdf");
+        }
+
+        function exportarWord() {
+            const blob = new Blob([document.getElementById("resultado").innerText], {
+                type: "application/msword",
+            });
+            saveAs(blob, "Resumo_Tempo_de_Servico.doc");
+        }
+
+        function exportarPpt() {
+            const blob = new Blob([document.getElementById("resultado").innerText], {
+                type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            });
+            saveAs(blob, "Resumo_Tempo_de_Servico.ppt");
+        }
+
+        document.getElementById("exportPdf").addEventListener("click", gerarPdf);
+        document.getElementById("exportWord").addEventListener("click", exportarWord);
+        document.getElementById("exportPpt").addEventListener("click", exportarPpt);
+
+        document.getElementById("form").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const nome = document.getElementById("nome").value;
+            const matricula = document.getElementById("matricula").value;
+            const inicio = document.getElementById("inicio").value;
+            const fim = document.getElementById("fim").value;
+            const averbados = parseInt(document.getElementById("averbados").value, 10);
+
+            if (!inicio || !fim || new Date(inicio) > new Date(fim)) {
+                alert("Por favor, insira datas válidas!");
+                return;
+            }
+
+            // Calcular tempo total
+            const { totalDias, anos, meses, dias } = calcularTempoDeServico(inicio, fim);
+
+            let descricaoAnos = '';
+            for (let ano = new Date(inicio).getFullYear(); ano <= new Date(fim).getFullYear(); ano++) {
+                const anoBissexto = (ano % 4 === 0 && (ano % 100 !== 0 || ano % 400 === 0));
+                const diasAno = anoBissexto ? 366 : 365;
+                descricaoAnos += `<p><strong>${ano}</strong>: ${diasAno} dias (${anoBissexto ? 'Bissexto' : 'Normal'})</p>`;
+            }
+
+            const resultadoDiv = document.getElementById("resultado");
+            resultadoDiv.innerHTML = `
+                <h2>Resumo do Tempo de Serviço</h2>
+                <p><strong>Nome:</strong> ${nome}</p>
+                <p><strong>Matrícula:</strong> ${matricula}</p>
+                <p><strong>Período:</strong> De ${inicio} a ${fim}</p>
+                <p><strong>Total de Dias:</strong> ${totalDias} dias</p>
+                <p><strong>Equivalente a:</strong> ${anos} anos, ${meses} meses e ${dias} dias</p>
+                <h3>Descrição Ano a Ano:</h3>
+                ${descricaoAnos}
+                <h3>Averbação:</h3>
+                <p><strong>Quantidade de dias averbados:</strong> ${averbados} dias</p>
+            `;
+            resultadoDiv.style.display = "block";
+
+            document.getElementById("exportPdf").style.display = "inline-block";
+            document.getElementById("exportWord").style.display = "inline-block";
+            document.getElementById("exportPpt").style.display = "inline-block";
+        });
+    </script>
+</body>
+</html>
